@@ -1,8 +1,5 @@
 package thridparty;
 
-import scheduler.Const;
-
-import javax.xml.crypto.dsig.TransformService;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -27,19 +24,25 @@ public class RoutingTable {
         routingTable.put(targetNodeId, transmitNode);
     }
 
-    //通道拆除时增加表项
+    //通道拆除时删除表项
     public static void removeElement(Integer targetNodeId) {
-        routingTable.remove(targetNodeId);
+        Iterator<Map.Entry<Integer, TransmitNode>> iterator = routingTable.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Integer, TransmitNode> entry = iterator.next();
+            if (entry.getValue().getNextNodeId() == targetNodeId) {
+                iterator.remove();
+            }
+        }
     }
 
-    public static void updateRoutingTable(HashMap otherRoutingTable, float delay, int nextNodeId,int selfNodeId) {
+    public static void updateRoutingTable(HashMap otherRoutingTable, float delay, int nextNodeId, int selfNodeId) {
         //将可达信息添加到该结点的路由表中
         Iterator<Map.Entry<Integer, TransmitNode>> iterator = otherRoutingTable.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<Integer, TransmitNode> entry = iterator.next();
             int targetNodeId = entry.getKey();
             //如果更新的targetNode为当前结点，则不需要更新
-            if(targetNodeId==selfNodeId){
+            if (targetNodeId == selfNodeId) {
                 continue;
             }
             TransmitNode transmitNode = entry.getValue();

@@ -16,6 +16,7 @@ public class Action {
     private Scheduler scheduler;
     private int channelType;
     private int channelId;
+    private int sendMessageCount;
 
     public Action(int target, Scheduler scheduler) {
         this.target = target;
@@ -24,12 +25,35 @@ public class Action {
         waitingCount = 0;
         queue = new ArrayList<>();
         clearChannelInfo();
+        sendMessageCount = 0;
+    }
+
+    public int getSendMessageCount() {
+        return this.sendMessageCount;
+    }
+
+    public int getWaitingCount(){
+        return this.waitingCount;
+    }
+
+    public int getChannelState(){
+        return this.channelState;
+    }
+
+    public int getChannelId(){
+        return this.channelId;
+    }
+
+    public int getChannelType(){
+        return this.channelType;
     }
 
     private void clearChannelInfo() {
         channelType = Const.CHANNEL_TYPE_ERROR;
         channelState = Const.CHANNEL_STATE_NONE;
         channelId = 0;
+        sendMessageCount=0;
+
     }
 
     public boolean isValid() {
@@ -82,7 +106,7 @@ public class Action {
         }
     }
 
-    public void onDestroy(Message message) {
+    public void onDestroy() {
         if (channelState == Const.CHANNEL_STATE_SUCCESS) {
             System.out.println("on destroy");
             clearChannelInfo();
@@ -93,7 +117,7 @@ public class Action {
         }
     }
 
-    public void onPrepare(Message message) {
+    public void onPrepare() {
         timeout = Math.max(timeout, Main.curTime() + Main.config.mainConfig.timeOut);
         waitingCount++;
         if (channelState == Const.CHANNEL_STATE_NONE) {
@@ -113,6 +137,9 @@ public class Action {
         } else {
             System.out.println("add into cache");
             System.out.printf("channelState:%d\n", channelState);
+            if(channelState==Const.CHANNEL_STATE_NONE){
+                doRequest(message.channelType);
+            }
             queue.add(message);
         }
     }
@@ -122,6 +149,8 @@ public class Action {
         if (message.recvTime + Main.config.mainConfig.timeOut >= Main.curTime() + getConfig().lag) {
             message.channelId = channelId;
             message.extMessage = RoutingTable.getRoutingTable();
+            //发送消息成功时计数器增加
+            this.sendMessageCount++;
             scheduler.doSend(message, message.targetId);
         }
     }

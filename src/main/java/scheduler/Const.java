@@ -20,18 +20,18 @@ public class Const {
     public final static int CHANNEL_TYPE_FAST = 1;
 
     public final static int ERR_CODE_NONE = 0x0;
-    public final static int ERR_CODE_NO_SUCH_CHANNEL = 0x001;
-    public final static int ERR_CODE_NO_SUCH_CALL_TYPE = 0x002;
-    public final static int ERR_CODE_CHANNEL_BUILD_MASK = 0x0100;
-    public final static int ERR_CODE_CHANNEL_BUILD_TARGET_REFUSE = 0x0101;
-    public final static int ERR_CODE_CHANNEL_BUILD_TARGET_LIMIT = 0x0102;
-    public final static int ERR_CODE_CHANNEL_BUILD_TOTAL_LIMIT = 0x0103;
-    public final static int ERR_CODE_CHANNEL_BUILD_SOURCE_LIMIT = 0x0104;
-    public final static int ERR_CODE_CHANNEL_BUILD_TARGET_TIMEOUT = 0x0105;
-    public final static int ERR_CODE_CHANNEL_BUILD_UNKNOWN_OPERATION = 0x106;
-    public final static int ERR_CODE_SEND_MASK = 0x200;
-    public final static int ERR_CODE_SEND_COUNT_LIMIT = 0x201;
-    public final static int ERR_CODE_SEND_SIZE_LIMIT = 0x202;
+    public final static int ERR_CODE_NO_SUCH_CHANNEL = 0x001;//1
+    public final static int ERR_CODE_NO_SUCH_CALL_TYPE = 0x002;//2
+    public final static int ERR_CODE_CHANNEL_BUILD_MASK = 0x0100;//256
+    public final static int ERR_CODE_CHANNEL_BUILD_TARGET_REFUSE = 0x0101;//257
+    public final static int ERR_CODE_CHANNEL_BUILD_TARGET_LIMIT = 0x0102;//258
+    public final static int ERR_CODE_CHANNEL_BUILD_TOTAL_LIMIT = 0x0103;//259
+    public final static int ERR_CODE_CHANNEL_BUILD_SOURCE_LIMIT = 0x0104;//260
+    public final static int ERR_CODE_CHANNEL_BUILD_TARGET_TIMEOUT = 0x0105;//261
+    public final static int ERR_CODE_CHANNEL_BUILD_UNKNOWN_OPERATION = 0x106;//262
+    public final static int ERR_CODE_SEND_MASK = 0x200;//512
+    public final static int ERR_CODE_SEND_COUNT_LIMIT = 0x201;//513
+    public final static int ERR_CODE_SEND_SIZE_LIMIT = 0x202;//514
 
     public final static double EXP = 1e-5;
 
