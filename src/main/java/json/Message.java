@@ -1,15 +1,15 @@
 package json;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
+import thridparty.TransmitNode;
 import java.util.Date;
-import java.util.Map;
+import java.util.HashMap;
 
 public class Message implements Cloneable{
     public String callType;
     public int channelId;
     public SysMessage sysMessage;
-    public Map<String, String> extMessage;
+    public HashMap<Integer, TransmitNode> extMessage;
     public int state;
     public int errCode;
     public int channelType;

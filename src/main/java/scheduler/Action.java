@@ -1,9 +1,12 @@
+package scheduler;
+
 import json.Message;
 import json.config.ChannelDetialConfig;
+import main.Main;
+import thridparty.RoutingTable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class Action {
     private int target;
@@ -38,7 +41,7 @@ public class Action {
     }
 
     public void doRequest(int channelType) {
-        if (this.channelType != Const.CHANNEL_TYPE_ERROR) return ;
+        if (this.channelType != Const.CHANNEL_TYPE_ERROR) return;
         this.channelType = channelType;
         channelState = Const.CHANNEL_STATE_REQUEST;
         scheduler.sendChannelBuild(target, Const.STATE_REQUEST, Const.ERR_CODE_NONE, channelType);
@@ -50,7 +53,7 @@ public class Action {
             if (scheduler.getId() < target) {
                 scheduler.sendChannelBuild(target, Const.STATE_REFUSE,
                         Const.ERR_CODE_CHANNEL_BUILD_TARGET_REFUSE, message.channelType);
-                return ;
+                return;
             }
         }
         scheduler.sendChannelBuild(target, Const.STATE_ACCEPT, Const.ERR_CODE_NONE, message.channelType);
@@ -101,7 +104,7 @@ public class Action {
     public void onSend(Message message) {
         if (scheduler.getId() == message.sysMessage.target) {
             System.out.println("succ received message: " + message.sysMessage.data);
-            return ;
+            return;
         }
         waitingCount--;
         if (channelState == Const.CHANNEL_STATE_SUCCESS) {
@@ -114,10 +117,12 @@ public class Action {
         }
     }
 
+    //action send message
     public void doSend(Message message) {
         if (message.recvTime + Main.config.mainConfig.timeOut >= Main.curTime() + getConfig().lag) {
             message.channelId = channelId;
-            scheduler.doSend(message, message.sysMessage.target);
+            message.extMessage = RoutingTable.getRoutingTable();
+            scheduler.doSend(message, message.targetId);
         }
     }
 
@@ -135,7 +140,7 @@ public class Action {
 
     public ChannelDetialConfig getConfig() {
         switch (channelType) {
-            case Const.CHANNEL_TYPE_FAST :
+            case Const.CHANNEL_TYPE_FAST:
                 return Main.config.channelConfig.highSpeed;
             case Const.CHANNEL_TYPE_NORMAL:
                 return Main.config.channelConfig.normalSpeed;

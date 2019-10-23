@@ -1,8 +1,11 @@
+package main;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import conn.Channel;
 import conn.GeneralChannel;
 import json.Message;
 import json.config.Config;
+import scheduler.Scheduler;
 
 import java.io.File;
 import java.util.Date;

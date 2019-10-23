@@ -1,3 +1,5 @@
+package scheduler;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import json.Message;
 
