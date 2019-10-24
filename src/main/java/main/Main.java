@@ -27,13 +27,18 @@ public class Main {
         mainloop(channel);
     }
 
-    public static void mainloop(Channel channel){
+    public static void mainloop(Channel channel) {
         Scheduler scheduler = new Scheduler(channel);
         while (true) {
             try {
-                List<Message> message = channel.recv();
-                for (Message msg : message) {
+                List<Message> messages = channel.recv();
+                for (Message msg : messages) {
                     scheduler.onRecv(msg);
+                }
+                //将积累的channel_build消息中划得来发送的消息发送出去
+                if (messages.size() == 0 && scheduler.getMessageQueue().size() > 0) {
+                    Message message=scheduler.getMessageQueue().remove();
+                    scheduler.onRecv(message);
                 }
                 Thread.sleep(20);
             } catch (InterruptedException e) {

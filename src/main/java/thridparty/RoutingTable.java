@@ -61,9 +61,26 @@ public class RoutingTable {
             Map.Entry<Integer, TransmitNode> entry = iterator.next();
             int targetNodeId = entry.getKey();
             TransmitNode transmitNode = entry.getValue();
-            if (transmitNode.getNextNodeId() == nextNodeId && null == otherRoutingTable.get(targetNodeId)) {
+            if (targetNodeId != nextNodeId && transmitNode.getNextNodeId() == nextNodeId && null == otherRoutingTable.get(targetNodeId)) {
                 iterator.remove();
             }
         }
+    }
+
+    public static String toStr() {
+        StringBuilder sb = new StringBuilder();
+        Iterator<Map.Entry<Integer, TransmitNode>> iterator = routingTable.entrySet().iterator();
+        sb.append("Routing Table:{");
+        while (iterator.hasNext()) {
+            Map.Entry<Integer, TransmitNode> entry = iterator.next();
+            int key = entry.getKey();
+            TransmitNode transmitNode = entry.getValue();
+            sb.append('[');
+            sb.append("target:").append(key).append(' ');
+            sb.append("nextId:").append(transmitNode.getNextNodeId()).append(' ');
+            sb.append("delay:").append(transmitNode.getDelay()).append(']');
+        }
+        sb.append('}');
+        return sb.toString();
     }
 }

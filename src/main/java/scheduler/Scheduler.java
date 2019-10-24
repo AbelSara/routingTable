@@ -6,10 +6,7 @@ import main.Main;
 import thridparty.RoutingTable;
 import thridparty.TransmitNode;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class Scheduler {
     private Channel channel;
@@ -23,6 +20,8 @@ public class Scheduler {
     private int sendMessageCount;
     //节点总数
     private int N;
+    //未成功建立信道的消息
+    private Queue<Message> messageQueue;
 
     public Scheduler(Channel channel) {
         this.channel = channel;
@@ -36,6 +35,11 @@ public class Scheduler {
         normalDelay = Main.config.channelConfig.normalSpeed.lag;
         totalLimitLabel = new HashSet<>();
         sendMessageCount = 0;
+        messageQueue = new LinkedList<>();
+    }
+
+    public Queue<Message> getMessageQueue() {
+        return this.messageQueue;
     }
 
     public int getId() {
@@ -51,6 +55,7 @@ public class Scheduler {
                     if (selectChannelType != Const.CHANNEL_TYPE_ERROR) {
                         message.channelType = selectChannelType;
                     } else {
+                        messageQueue.offer(message);
                         return;
                     }
                     break;
@@ -66,10 +71,13 @@ public class Scheduler {
                         if (selectChannelType != Const.CHANNEL_TYPE_ERROR) {
                             message.channelType = selectChannelType;
                         } else {
+                            messageQueue.offer(message);
                             return;
                         }
                     }
                     break;
+                default:
+                    return;
             }
         }
         switch (message.callType) {
@@ -102,11 +110,11 @@ public class Scheduler {
                 break;
             case Const.CALL_TYPE_CHANNEL_BUILD:
                 if (message.channelId != 0) {
-                    action[message.sysMessage.target].onSucc(message);
-                    channelMap.put(message.channelId, message.sysMessage.target);
                     //建立信道时在路由表中添加必须结点
                     float delay = message.channelType == Const.CHANNEL_TYPE_FAST ? fastDelay : normalDelay;
                     RoutingTable.addElement(message.sysMessage.target, new TransmitNode(message.sysMessage.target, delay));
+                    action[message.sysMessage.target].onSucc(message);
+                    channelMap.put(message.channelId, message.sysMessage.target);
                     //如果通道成功建立在label集合中取出该标签
                     if (totalLimitLabel.contains(message.sysMessage.target)) {
                         totalLimitLabel.remove(message.sysMessage.target);
@@ -128,8 +136,6 @@ public class Scheduler {
                 if (target != 0) {
                     action[target].onDestroy();
                     channelMap.remove(message.channelId);
-                    //删除当前路由表结点
-                    RoutingTable.removeElement(target);
                 }
                 break;
         }
@@ -147,7 +153,7 @@ public class Scheduler {
 
     public void doSend(Message message, int target) {
         try {
-            if (target != 0) {
+            if (target != 0 && message.callType != Const.CALL_TYPE_CHANNEL_DESTROY) {
                 sendMessageCount++;
             }
             channel.send(message, target);
@@ -160,7 +166,8 @@ public class Scheduler {
         int targetId = 0;
         int minMessageCount = Integer.MAX_VALUE;
         for (int i = 1; i <= N; i++) {
-            if (action[i].getChannelState() == Const.CHANNEL_STATE_SUCCESS && action[i].getSendMessageCount() < minMessageCount && action[i].getWaitingCount() == 0) {
+            if (action[i].getChannelState() == Const.CHANNEL_STATE_SUCCESS && action[i].getSendMessageCount() < minMessageCount
+                    && action[i].getWaitingCount() == 0 && action[i].filterQueue() == 0) {
                 minMessageCount = action[i].getSendMessageCount();
                 targetId = i;
             }
@@ -171,9 +178,11 @@ public class Scheduler {
         }
         int channelType = action[targetId].getChannelType();
         channelMap.remove(action[targetId].getChannelId());
-        RoutingTable.removeElement(targetId);
         sendMessageCount -= action[targetId].getSendMessageCount();
-        action[targetId].onDestroy();
+        //销毁信道
+        //action[targetId].onDestroy();
+        action[targetId].doDestroy();
+        System.out.println("拆除信道{" + "channelType:" + channelType + ", targetId:" + targetId + " }");
         return channelType;
     }
 }

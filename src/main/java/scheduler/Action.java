@@ -3,6 +3,7 @@ package scheduler;
 import json.Message;
 import json.config.ChannelDetialConfig;
 import main.Main;
+import org.omg.PortableInterceptor.NON_EXISTENT;
 import thridparty.RoutingTable;
 
 import java.util.ArrayList;
@@ -32,19 +33,19 @@ public class Action {
         return this.sendMessageCount;
     }
 
-    public int getWaitingCount(){
+    public int getWaitingCount() {
         return this.waitingCount;
     }
 
-    public int getChannelState(){
+    public int getChannelState() {
         return this.channelState;
     }
 
-    public int getChannelId(){
+    public int getChannelId() {
         return this.channelId;
     }
 
-    public int getChannelType(){
+    public int getChannelType() {
         return this.channelType;
     }
 
@@ -52,8 +53,7 @@ public class Action {
         channelType = Const.CHANNEL_TYPE_ERROR;
         channelState = Const.CHANNEL_STATE_NONE;
         channelId = 0;
-        sendMessageCount=0;
-
+        sendMessageCount = 0;
     }
 
     public boolean isValid() {
@@ -98,6 +98,9 @@ public class Action {
         if (channelState != Const.CHANNEL_STATE_SUCCESS) {
             System.out.println("on refuse");
             int next = getOtherType();
+            if (message.errCode == Const.ERR_CODE_CHANNEL_BUILD_SOURCE_LIMIT || message.errCode == Const.ERR_CODE_CHANNEL_BUILD_TOTAL_LIMIT) {
+                next = message.channelType;
+            }
             clearChannelInfo();
             filterQueue();
             if (waitingCount > 0 || queue.size() > 0) {
@@ -106,15 +109,38 @@ public class Action {
         }
     }
 
+    //接受destroy消息
     public void onDestroy() {
         if (channelState == Const.CHANNEL_STATE_SUCCESS) {
             System.out.println("on destroy");
             clearChannelInfo();
+            RoutingTable.removeElement(target);
         }
         filterQueue();
         if (waitingCount > 0 || queue.size() > 0) {
             doRequest(getOtherType());
         }
+    }
+
+    //主动发送destroy消息
+    public void doDestroy() {
+        if (channelState == Const.CHANNEL_STATE_SUCCESS) {
+            System.out.println("do destroy!");
+            Message destroyMessage = getDestroyMessage();
+            doSend(destroyMessage);
+            clearChannelInfo();
+        }
+    }
+
+    private Message getDestroyMessage() {
+        Message message = Const.GetEmptyMessage();
+        message.callType = Const.CALL_TYPE_CHANNEL_DESTROY;
+        message.state = Const.CHANNEL_STATE_SUCCESS;
+        message.sysMessage.target = target;
+        message.errCode = Const.ERR_CODE_NONE;
+        message.channelType = channelType;
+        message.targetId = target;
+        return message;
     }
 
     public void onPrepare() {
@@ -137,9 +163,9 @@ public class Action {
         } else {
             System.out.println("add into cache");
             System.out.printf("channelState:%d\n", channelState);
-            if(channelState==Const.CHANNEL_STATE_NONE){
-                doRequest(message.channelType);
-            }
+//            if(channelState==Const.CHANNEL_STATE_NONE){
+//                doRequest(message.channelType);
+//            }
             queue.add(message);
         }
     }
@@ -148,14 +174,16 @@ public class Action {
     public void doSend(Message message) {
         if (message.recvTime + Main.config.mainConfig.timeOut >= Main.curTime() + getConfig().lag) {
             message.channelId = channelId;
-            message.extMessage = RoutingTable.getRoutingTable();
+            if (message.callType != Const.CALL_TYPE_CHANNEL_DESTROY) {
+                message.extMessage = RoutingTable.getRoutingTable();
+                this.sendMessageCount++;
+            }
             //发送消息成功时计数器增加
-            this.sendMessageCount++;
             scheduler.doSend(message, message.targetId);
         }
     }
 
-    public void filterQueue() {
+    public int filterQueue() {
         ArrayList<Message> filtered = new ArrayList<>();
         for (Message message : queue) {
             ChannelDetialConfig selfConf = getConfig();
@@ -165,6 +193,7 @@ public class Action {
             }
         }
         queue = filtered;
+        return queue.size();
     }
 
     public ChannelDetialConfig getConfig() {
